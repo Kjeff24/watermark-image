@@ -44,6 +44,10 @@ public class ImageProcessor {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         ImageIO.write(originalImage, imageFormat, byteArrayOutputStream);
 
+        String outputFileName = "watermark-image." + imageFormat;
+        File outputFile = new File(outputFileName);
+        ImageIO.write(originalImage, imageFormat, outputFile);
+
         return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
     }
 }
