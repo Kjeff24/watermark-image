@@ -1,23 +1,29 @@
 package org.example.service;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Iterator;
 
 public class ImageProcessor {
 
-    public static InputStream processImageWithWatermark(InputStream inputStream, String name, String imageFormat) throws IOException {
+    public static String processImageWithWatermark(String imagePath, String name) throws IOException {
         String currentDate = new SimpleDateFormat("dd MMM yyyy HH:mm:ss").format(new Date());
         String watermarkText = name.toUpperCase() + " - " + currentDate;
 
-        BufferedImage originalImage = ImageIO.read(inputStream);
+        File inputFile = new File(imagePath);
+        BufferedImage originalImage = ImageIO.read(inputFile);
+
+        String imageFormat = getImageFormat(inputFile);
+        if (imageFormat == null) {
+            throw new IOException("Unsupported image format");
+        }
 
         Graphics2D graphics = (Graphics2D) originalImage.getGraphics();
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -41,13 +47,20 @@ public class ImageProcessor {
 
         graphics.dispose();
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ImageIO.write(originalImage, imageFormat, byteArrayOutputStream);
-
         String outputFileName = "watermark-image." + imageFormat;
         File outputFile = new File(outputFileName);
         ImageIO.write(originalImage, imageFormat, outputFile);
 
-        return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+        return outputFile.getAbsolutePath();
+    }
+
+    private static String getImageFormat(File file) throws IOException {
+        try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(file)) {
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
+            if (readers.hasNext()) {
+                return readers.next().getFormatName().toLowerCase();
+            }
+        }
+        return null;
     }
 }
